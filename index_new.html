@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    @keyframes drift1 {
+      0%   { transform: translate(-10%, -10%) scale(1); }
+      50%  { transform: translate(6%, 8%) scale(1.15); }
+      100% { transform: translate(-10%, -10%) scale(1); }
+    }
+    @keyframes drift2 {
+      0%   { transform: translate(8%, 6%) scale(1.1); }
+      50%  { transform: translate(-8%, -12%) scale(1); }
+      100% { transform: translate(8%, 6%) scale(1.1); }
+    }
+    @keyframes floatY {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    body { margin: 0; background: oklch(12% 0.014 265); }
+    a { color: oklch(78% 0.14 220); text-decoration: none; }
+    a:hover { color: oklch(85% 0.12 220); }
+    ::selection { background: oklch(55% 0.18 300 / 0.5); color: white; }
+
+    /* Estilos Nativos para a Barra de Busca e Filtros */
+    .hub-input {
+      width: 100%; box-sizing: border-box; background: oklch(20% 0.015 265 / 0.55);
+      border: 1px solid oklch(32% 0.015 265 / 0.7); border-radius: 16px;
+      padding: 18px 20px 18px 52px; color: oklch(94% 0.006 265);
+      font-size: 16px; font-family: 'Inter', sans-serif; backdrop-filter: blur(10px);
+      transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    }
+    .hub-input:focus {
+      border-color: oklch(72% 0.15 210); box-shadow: 0 0 0 1px oklch(72% 0.15 210);
+    }
+    .hub-input::placeholder { color: oklch(50% 0.02 265); }
+    .hub-filter-btn {
+      padding: 8px 18px; border-radius: 999px; font-size: 12px; font-weight: 600;
+      background: oklch(20% 0.015 265 / 0.8); color: oklch(65% 0.02 265);
+      border: 1px solid oklch(32% 0.015 265 / 0.7); cursor: pointer; transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .hub-filter-btn:hover { background: oklch(25% 0.015 265); color: oklch(85% 0.02 265); }
+    .hub-filter-btn.active {
+      background: oklch(30% 0.08 300 / 0.3); color: oklch(80% 0.13 300);
+      border-color: oklch(55% 0.15 300 / 0.4);
+    }
+    /* acento por categoria nos filtros — cada trilha com a cor que carrega nos cards */
+    .hub-filter-btn[data-filter="cartas"].active { background:#ffb02026; color:#ffb020; border-color:#ffb02059; }
+    .hub-filter-btn[data-filter="jogo"].active { background:#c04dff26; color:#c04dff; border-color:#c04dff59; }
+    .hub-filter-btn[data-filter="marcador"].active { background:#35c7ff26; color:#35c7ff; border-color:#35c7ff59; }
+    .hub-filter-btn[data-filter="ferramenta"].active { background:#5fd98a26; color:#5fd98a; border-color:#5fd98a59; }
+    .hub-filter-btn[data-filter="kids"].active { background:#f472b626; color:#f472b6; border-color:#f472b659; }
+
+    /* card da trilha freeware/oficina (quasimodo) — material proposital diferente do resto */
+    .app-card--craft {
+      color: #ecdfc4;
+    }
+    .app-card--craft h3 { color:#ecdfc4 !important; font-family:"Iowan Old Style","Palatino Linotype","Book Antiqua",Georgia,serif !important; }
+    .app-card--craft p { color:#c9bda0 !important; }
+    .app-card--craft::before, .app-card--craft::after {
+      content:''; position:absolute; width:7px; height:7px; border-radius:50%;
+      background:radial-gradient(circle at 35% 35%, #e4b164, #c99447);
+      box-shadow:0 1px 2px rgba(0,0,0,.5);
+    }
+    .app-card--craft::before { top:14px; left:14px; }
+    .app-card--craft::after { top:14px; right:14px; }
+
+    /* --- hover dos cards --------------------------------------------------
+       O runtime aceita style-hover (collectProps -> pseudoClass), mas recebe o
+       valor CRU do atributo em tempo de compilação: com {{ }} dentro, a regra
+       inserida fica vazia — e, mesmo resolvida, todos os cards dividiriam UMA
+       classe só, sem cor por trilha. Por isso o hover mora aqui, keyed em
+       data-category. O !important existe porque a borda vem de style inline,
+       que venceria a folha de estilo por especificidade. */
+    .app-card {
+      transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+    .app-card:hover, .app-card:focus-visible { transform: translateY(-5px); }
+    .app-card:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+    .app-card[data-category="cartas"]:hover,
+    .app-card[data-category="cartas"]:focus-visible { border-color:#ffb020 !important; box-shadow:0 16px 40px -16px #ffb020aa; }
+    .app-card[data-category="jogo"]:hover,
+    .app-card[data-category="jogo"]:focus-visible { border-color:#c04dff !important; box-shadow:0 16px 40px -16px #c04dffaa; }
+    .app-card[data-category="marcador"]:hover,
+    .app-card[data-category="marcador"]:focus-visible { border-color:#35c7ff !important; box-shadow:0 16px 40px -16px #35c7ffaa; }
+    .app-card[data-category="ferramenta"]:hover,
+    .app-card[data-category="ferramenta"]:focus-visible { border-color:#5fd98a !important; box-shadow:0 16px 40px -16px #5fd98aaa; }
+    .app-card[data-category="kids"]:hover,
+    .app-card[data-category="kids"]:focus-visible { border-color:#f472b6 !important; box-shadow:0 16px 40px -16px #f472b6aa; }
+    /* a trilha craft é ferramenta, mas mantém o material dela — mesma
+       especificidade da regra acima, vence por vir depois */
+    .app-card.app-card--craft:hover,
+    .app-card.app-card--craft:focus-visible {
+      border-color:#e4b164 !important;
+      box-shadow: inset 0 0 0 1px rgba(232,220,192,.28), 0 16px 40px -16px #c99447aa !important;
+    }
+
+    /* só a pixel art escala com pixel cravado; line art e foto precisam da
+       interpolação suave, senão o traço fino serrilha */
+    .app-card img.pixelart { image-rendering: pixelated; }
+
+    /* alcance que o style-hover nunca teve: filhos do card */
+    .app-card__icon, .app-card img { transition: transform .25s ease; }
+    .app-card:hover .app-card__icon, .app-card:focus-visible .app-card__icon { transform: scale(1.10); }
+    .app-card:hover img, .app-card:focus-visible img { transform: scale(1.04); }
+
+    @media (prefers-reduced-motion: reduce) {
+      .app-card, .app-card__icon, .app-card img { transition: none; }
+      .app-card:hover, .app-card:focus-visible,
+      .app-card:hover .app-card__icon, .app-card:hover img { transform: none; }
+    }
+  </style>
+</helmet>
+
+<div style="position:relative; min-height:100vh; font-family:'Inter', sans-serif; color:oklch(94% 0.006 265); overflow:hidden; background:oklch(12% 0.014 265);" data-screen-label="Landing">
+
+  <canvas ref="{{ canvasRef }}" style="position:fixed; inset:0; width:100%; height:100%; z-index:0; opacity:0.55;"></canvas>
+
+  <div style="position:fixed; top:-15%; left:-10%; width:60vw; height:60vw; max-width:900px; max-height:900px; border-radius:50%; background:radial-gradient(circle, oklch(55% 0.18 300 / 0.35), transparent 70%); filter:blur(60px); animation:drift1 26s ease-in-out infinite; z-index:0; pointer-events:none;"></div>
+  <div style="position:fixed; bottom:-20%; right:-10%; width:55vw; height:55vw; max-width:800px; max-height:800px; border-radius:50%; background:radial-gradient(circle, oklch(70% 0.14 210 / 0.3), transparent 70%); filter:blur(60px); animation:drift2 32s ease-in-out infinite; z-index:0; pointer-events:none;"></div>
+
+  <div style="position:relative; z-index:10;">
+
+    <nav style="max-width:1120px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:28px 24px 0;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg, oklch(65% 0.19 300), oklch(72% 0.15 210)); box-shadow:0 0 20px oklch(60% 0.19 300 / 0.5);"></div>
+        <span style="font-family:'Sora',sans-serif; font-weight:700; font-size:15px; letter-spacing:0.02em;">playbase</span>
+      </div>
+      <span style="font-size:12px; color:oklch(65% 0.02 265); font-family:'Inter'; letter-spacing:0.02em;">feito pra jogar com a galera</span>
+    </nav>
+
+    <header style="max-width:820px; margin:0 auto; text-align:center; padding:96px 24px 40px;">
+      <span style="display:inline-block; font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:oklch(80% 0.13 300); background:oklch(30% 0.08 300 / 0.35); border:1px solid oklch(55% 0.15 300 / 0.4); padding:6px 14px; border-radius:999px; margin-bottom:22px;">hub de apps ✦ sempre crescendo</span>
+      <h1 style="font-family:'Sora',sans-serif; font-weight:800; font-size:clamp(36px, 6vw, 58px); line-height:1.05; letter-spacing:-0.02em; margin:0 0 20px; background:linear-gradient(135deg, oklch(97% 0 0) 20%, oklch(80% 0.06 265) 60%, oklch(72% 0.1 300) 100%); -webkit-background-clip:text; background-clip:text; color:transparent;">Ferramentas pra suas partidas ficarem ainda melhores</h1>
+      <p style="font-size:17px; line-height:1.6; color:oklch(72% 0.02 265); margin:0 auto; max-width:560px;">Um cantinho que reúne utilitários rápidos — simples ou nem tão simples assim — pra sorteios, marcadores e rolês de jogo com os amigos. E ele só cresce.</p>
+    </header>
+
+    <div style="max-width:720px; margin:0 auto 50px; padding:0 24px;">
+      <div style="position:relative;">
+        <input type="text" id="hub-search" placeholder="Buscar por jogos, utilitários, marcadores..." class="hub-input">
+        <svg style="position:absolute; left:18px; top:50%; transform:translateY(-50%); width:22px; height:22px; color:oklch(50% 0.02 265); pointer-events:none;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; justify-content:center;">
+        <button class="hub-filter-btn active" data-filter="">Todos</button>
+        <button class="hub-filter-btn" data-filter="cartas">Cartas</button>
+        <button class="hub-filter-btn" data-filter="jogo">Jogos</button>
+        <button class="hub-filter-btn" data-filter="marcador">Marcadores</button>
+        <button class="hub-filter-btn" data-filter="ferramenta">Ferramentas</button>
+        <button class="hub-filter-btn" data-filter="kids">Infantil</button>
+      </div>
+    </div>
+
+    <main style="max-width:1120px; margin:0 auto; padding:0 24px 100px; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:20px;">
+      <!-- Um único laço: a ordem do grid passa a ser a ordem de APPS_DATA,
+           independente de o card ter imagem ou ícone. Imagem e ícone entram
+           por sc-if (o runtime não tem sc-else), e a trilha craft chega pela
+           className calculada, não por um laço separado. -->
+      <sc-for list="{{ cards }}" as="app" hint-placeholder-count="8">
+        <a href="{{ app.href }}" style="{{ app.cardStyle }}" class="{{ app.className }}" data-category="{{ app.category }}">
+          <sc-if value="{{ app.image }}">
+            <img src="{{ app.image }}" alt="{{ app.title }}" class="{{ app.imgClass }}" loading="lazy" width="640" height="360" style="width:100%; height:7rem; object-fit:cover; border-radius:0.75rem; margin-bottom:1rem; border:1px solid rgba(255,255,255,0.08);">
+          </sc-if>
+          <sc-if value="{{ app.icon }}">
+            <div class="app-card__icon" style="{{ app.iconStyle }}">{{ app.icon }}</div>
+          </sc-if>
+          <h3 style="font-family:'Sora',sans-serif; font-weight:700; font-size:17px; color:oklch(93% 0.01 265); margin:0 0 8px;">{{ app.title }}</h3>
+          <p style="font-size:13.5px; line-height:1.55; color:oklch(65% 0.02 265); margin:0;">{{ app.desc }}</p>
+          <span style="{{ app.tagStyle }}">{{ app.categoryLabel }}</span>
+          <sc-if value="{{ app.badge }}">
+            <span style="display:inline-block; margin-top:14px; margin-left:8px; font-size:10.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:oklch(78% 0.14 300); background:oklch(30% 0.08 300 / 0.3); border:1px solid oklch(55% 0.15 300 / 0.35); padding:4px 10px; border-radius:999px;">{{ app.badge }}</span>
+          </sc-if>
+        </a>
+      </sc-for>
+    </main>
+
+    <section style="max-width:820px; margin:0 auto; padding:0 24px 110px; text-align:center;">
+      <div style="width:44px; height:44px; margin:0 auto 24px; border-radius:12px; background:linear-gradient(135deg, oklch(30% 0.06 300 / 0.5), oklch(24% 0.04 210 / 0.5)); border:1px solid oklch(50% 0.1 280 / 0.3); display:flex; align-items:center; justify-content:center; font-size:20px; animation:floatY 5s ease-in-out infinite;">✦</div>
+      <h2 style="font-family:'Sora',sans-serif; font-weight:700; font-size:26px; margin:0 0 16px; color:oklch(94% 0.01 265);">Por que esse hub existe</h2>
+      <p style="font-size:15.5px; line-height:1.75; color:oklch(68% 0.02 265); margin:0;">Começou como uma pequena coleção de soluções pra resolver problema chato de noite de jogo — cronômetro sumido, papel de bingo rasurado, briga por causa de conta dividida errado. Virou uma casa só pra tudo isso. A ideia é simples: cada vez que surge uma necessidade nova, um novo app nasce aqui — do mais simples ao mais elaborado — sem custo, sem cadastro, sem enrolação.</p>
+    </section>
+
+    <footer style="border-top:1px solid oklch(30% 0.01 265 / 0.6); padding:56px 24px 32px;">
+      <div style="max-width:1120px; margin:0 auto; display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:40px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <div style="width:22px; height:22px; border-radius:6px; background:linear-gradient(135deg, oklch(65% 0.19 300), oklch(72% 0.15 210));"></div>
+            <span style="font-family:'Sora',sans-serif; font-weight:700; font-size:14px;">playbase</span>
+          </div>
+          <p style="font-size:13px; line-height:1.6; color:oklch(58% 0.02 265); max-width:280px; margin:0;">Uma página que abriga — e vai continuar abrigando — aplicações simples ou complexas pra jogar com os amigos.</p>
+        </div>
+        <div>
+          <h4 style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:oklch(55% 0.02 265); margin:0 0 14px;">Apps</h4>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <nav style="display:flex; flex-direction:column; gap:10px;">
+              <sc-for list="{{ footerLinks }}" as="link" hint-placeholder-count="4">
+                <a href="{{ link.href }}" style="font-size:13.5px; color:oklch(70% 0.02 265); text-decoration:none;">{{ link.label }}</a>
+              </sc-for>
+            </nav>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:oklch(55% 0.02 265); margin:0 0 14px;">Sobre</h4>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <span style="font-size:13.5px; color:oklch(70% 0.02 265);">Feito pra jogar mais e discutir menos</span>
+            <span style="font-size:13.5px; color:oklch(70% 0.02 265);">Novo app sempre que surge uma ideia</span>
+            <a href="termos/" style="font-size:13.5px; color:oklch(78% 0.14 220);">Termos de Uso</a>
+          </div>
+        </div>
+      </div>
+      <div style="max-width:1120px; margin:40px auto 0; padding-top:24px; border-top:1px solid oklch(30% 0.01 265 / 0.5); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+        <span style="font-size:12px; color:oklch(48% 0.01 265);">© {{ year }} playbase — hub de apps pra jogar com os amigos</span>
+        <span style="font-size:12px; color:oklch(48% 0.01 265);"><a href="termos/" style="color:oklch(58% 0.02 265);">Termos de Uso</a> &middot; feito com ✦ e algumas partidas testadas</span>
+      </div>
+    </footer>
+
+  </div>
+</div>
+
+</x-dc>
+
+<script type="text/x-dc" data-dc-script>
+const APPS_DATA = [
+// art: define o idioma visual do card, e é o que decide se o navegador escala a
+// imagem com pixel cravado ou com interpolação suave.
+//   "pixel" — pixel art 320x180 (jogos e marcadores)
+//   "line"  — line art vetorial 640x360 (ferramentas e serviços)
+//   "photo" — beauty shot fotográfica 640x360 (trilha cartas) e ilustração infantil
+  { image: "_art/cards/bingo.webp",     art: "pixel", title: "Marcador de Bingo", desc: "Acompanhe e marque eletronicamente sua cartela física.", href: "bingo/", category: "marcador" },
+  { image: "_art/cards/dado3d.webp",    art: "line",  title: "Dado 3D Realista", desc: "Simulador 3D com física de rotação fluida.", href: "dado3d/", category: "ferramenta" },
+  { image: "_art/cards/contador.webp",  art: "pixel", title: "Contador de Pontos", desc: "Painel digital de pontuação em tempo real.", href: "marcadorpts/", category: "marcador" },
+  { image: "_art/cards/timer.webp",     art: "pixel", title: "Timer de Turnos", desc: "Ritmo para rodadas com alertas sonoros.", href: "timer/", category: "marcador" },
+  { image: "_art/cards/amigosecreto.webp", art: "line", title: "Amigo Secreto", desc: "Sorteador blindado com envio seguro por e-mail.", href: "amigosecreto/", category: "ferramenta" },
+  { image: "_art/cards/divisor.webp",   art: "line",  title: "Divisor de Contas", desc: "Rache despesas de forma justa.", href: "dividirdespesas/", category: "ferramenta" },
+  { image: "_art/cards/xadrez.webp",    art: "pixel", title: "Xadrez 3D", desc: "Tabuleiro 3D para partidas casuais ou sérias.", href: "https://xadrez.steniosantos.com/", category: "jogo" },
+  { image: "_art/cards/minigames.webp", art: "pixel", title: "Mini-Games", desc: "Jogo da Velha e Conecte 4 online.", href: "minigames/", category: "jogo" },
+  { image: "_art/cards/roleta.webp",    art: "line",  title: "Roleta de Decisões", desc: "Gire a roleta para resolver impasses.", href: "roleta/", category: "ferramenta" },
+  { image: "_art/cards/matchmaker.webp", art: "line", title: "Formador de Times", desc: "Balanceamento de grupos por habilidade.", href: "matchmaker/", category: "ferramenta" },
+  { image: "_art/cards/stop.webp",      art: "pixel", title: "Gerador de Temas", desc: "Sorteador de letras e categorias (Stop!).", href: "stop/", category: "jogo" },
+  { image: "_art/cards/lobisomem.webp", art: "pixel", title: "Lobisomem", desc: "Moderador automatizado para dedução social.", href: "lobisomem/", category: "jogo" },
+  { image: "_art/cards/aetherium.webp", art: "photo", title: "Aetherium", desc: "Jogo de cartas multiplayer de criatividade e dedução.", href: "aetherium/", category: "cartas" },
+  { image: "_art/cards/chesstimer.webp", art: "pixel", title: "Relógio de Xadrez", desc: "Cronômetro de luxo com sistema Fischer de acréscimo.", href: "chess-timer/", category: "marcador" },
+  { image: "_art/cards/vergonha.webp",  art: "photo", title: "Vergonha de Você!", desc: "Jogo de cartas multiplayer: dilemas embaraçosos e ranking de vitórias em tempo real.", href: "vergonha/", category: "cartas" },
+  { image: "_art/cards/palavramagica.webp", art: "photo", title: "Palavra Mágica", desc: "Aprenda a ler com fases interativas e monte seu avatar.", href: "palavramagica/", category: "kids", badge: "novo" },
+  { image: "_art/cards/baralho.webp",   art: "pixel", title: "Baralho Virtual", desc: "Um baralho completo na palma da mão, com corte e embaralhar de verdade.", href: "baralho/", category: "jogo" },
+  { image: "_art/cards/forca.webp",     art: "pixel", title: "Forca Imersiva", desc: "O clássico jogo da forca com trilha sonora e ranking online.", href: "forca/", category: "jogo" },
+  { image: "_art/cards/opcoes.webp",    art: "line",  title: "Painel de Opções · B3", desc: "Análise de opções da B3: cadeia de strikes, gregas, vencimentos e montagem de estruturas, com dados de mercado em tempo quase real.", href: "https://opcoes.steniosantos.com/", category: "ferramenta" },
+  { image: "_art/cards/video2app.webp", art: "line",  title: "Video2App Builder", desc: "Transforma um método em vídeo (YouTube ou transcrição) em app HTML autocontido: dashboard, calculadora, formulário, infográfico ou checklist, pronto para publicar.", href: "https://steniosantos.com/apps/video2app/index.html", category: "ferramenta" },
+  { icon: "🧩", title: "Cubo Mágico 3D", desc: "Resolva um cubo mágico 3D realista direto no navegador, com física de rotação suave.", href: "https://cubomagico.steniosantos.com/", category: "jogo", badge: "novo" },
+  { image: "_art/cards/turbokart.webp", art: "pixel", title: "Turbo Kart", desc: "Corrida top-down estilo Mario Kart: single player contra CPUs ou multiplayer online por código de sala.", href: "https://turbokart.steniosantos.com/", category: "jogo", badge: "novo" },
+  { icon: "✌️", title: "Pedra, Papel e Tesoura", desc: "Multiplayer em tempo real por código de sala: até 8 jogadores, modos melhor de 3 a 9, chat e placar histórico de vitórias.", href: "https://pepate.steniosantos.com/", category: "jogo", badge: "novo" },
+];
+
+const APPS_FREEWARE = [
+  { icon: "❦", title: "Quasímodo", desc: "Oficina de ferramentas de arquivo — renomear, gerar e buscar. Distribuído como freeware.", href: "quasimodo/", category: "ferramenta" },
+];
+
+const FOOTER_LINKS = [
+  { label: "Marcador de Bingo", href: "bingo/" },
+  { label: "Dado 3D Realista", href: "dado3d/" },
+  { label: "Amigo Secreto", href: "amigosecreto/" },
+  { label: "Xadrez 3D", href: "https://xadrez.steniosantos.com/" },
+  { label: "Mini-Games", href: "minigames/" },
+  { label: "Aetherium", href: "aetherium/" },
+  { label: "Relógio de Xadrez", href: "chess-timer/" },
+  { label: "Vergonha de você!", href: "vergonha/" },
+  { label: "Palavra Mágica", href: "palavramagica/" },
+  { label: "Baralho Virtual", href: "baralho/" },
+  { label: "Forca Imersiva", href: "forca/" },
+  { label: "Quasímodo", href: "quasimodo/" },
+  { label: "Painel de Opções · B3", href: "https://opcoes.steniosantos.com/" },
+  { label: "Video2App Builder", href: "https://steniosantos.com/apps/video2app/index.html" },
+  { label: "Cubo Mágico 3D", href: "https://cubomagico.steniosantos.com/" },
+  { label: "Turbo Kart", href: "https://turbokart.steniosantos.com/" },
+  { label: "Pedra, Papel e Tesoura", href: "https://pepate.steniosantos.com/" },
+];
+
+class Component extends DCLogic {
+  canvasRef = React.createRef();
+
+  componentDidMount() {
+    const canvas = this.canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let w, h, dpr;
+    let particles = [];
+    let raf;
+
+    const resize = () => {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = canvas.clientWidth;
+      h = canvas.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const count = Math.min(70, Math.floor((w * h) / 18000));
+      particles = new Array(count).fill(0).map(() => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+      }));
+    };
+
+    const step = () => {
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+      }
+      const maxDist = 130;
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i], b = particles[j];
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < maxDist) {
+            ctx.strokeStyle = 'rgba(150, 160, 220, ' + (0.16 * (1 - dist / maxDist)) + ')';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+      }
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(190, 200, 240, 0.55)';
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(step);
+    };
+
+    resize();
+    step();
+    window.addEventListener('resize', resize);
+    this._cleanup = () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener('resize', resize);
+    };
+  }
+
+  componentWillUnmount() {
+    if (this._cleanup) this._cleanup();
+  }
+
+  renderVals() {
+    // Cor de cada trilha — os mesmos valores usados em _shared/gamer-tokens.css e
+    // _shared/kids-tokens.css, pra card do hub e app retocado combinarem exatamente.
+    var CATEGORY_META = {
+      cartas:     { label: 'Cartas',     color: '#ffb020' },
+      jogo:       { label: 'Jogo',       color: '#c04dff' },
+      marcador:   { label: 'Marcador',   color: '#35c7ff' },
+      ferramenta: { label: 'Ferramenta', color: '#5fd98a' },
+      kids:       { label: 'Infantil',   color: '#f472b6' },
+    };
+    var baseCard = 'display:block; position:relative; background:oklch(20% 0.015 265 / 0.55); border:1px solid oklch(32% 0.015 265 / 0.7); border-radius:18px; padding:26px; backdrop-filter:blur(10px); transition:transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;';
+    var kidCard = 'display:block; position:relative; background:linear-gradient(160deg, oklch(24% 0.035 340 / 0.55), oklch(19% 0.025 290 / 0.55)); border:1px solid #f472b64d; border-radius:26px; padding:26px; backdrop-filter:blur(10px); transition:transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;';
+    var craftCard = 'display:block; position:relative; background:linear-gradient(160deg, #2b251c, #231e16); border:1px solid #c99447; border-radius:18px; padding:26px; box-shadow:inset 0 0 0 1px rgba(232,220,192,.14); transition:transform 0.25s ease, box-shadow 0.25s ease;';
+
+    // O hover não sai mais daqui: o runtime só aceita style-hover com CSS
+    // literal (o valor do atributo é lido em tempo de compilação, antes de
+    // {{ }} existir), então ele vive no <style> do helmet, keyed em
+    // data-category. cardHoverStyle foi removido por ser código morto.
+    function styleFor(app) {
+      var meta = CATEGORY_META[app.category] || CATEGORY_META.ferramenta;
+      var isKid = app.category === 'kids';
+      var card = isKid ? kidCard : baseCard;
+      return {
+        categoryLabel: meta.label,
+        cardStyle: card,
+        iconStyle: 'width:46px; height:46px; border-radius:12px; background:' + meta.color + '28; border:1px solid ' + meta.color + '55; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:16px; color:' + meta.color + ';',
+        tagStyle: 'display:inline-block; margin-top:14px; font-size:10.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:' + meta.color + '; background:' + meta.color + '26; border:1px solid ' + meta.color + '59; padding:4px 10px; border-radius:999px;',
+      };
+    }
+
+    var allApps = APPS_DATA.map(function(app) {
+      // card com imagem não renderiza ícone: sc-if testa a verdade do valor,
+      // então basta o campo não existir.
+      return {
+        ...app, ...styleFor(app),
+        className: 'app-card',
+        // só pixel art recebe image-rendering:pixelated; traço fino e foto
+        // precisam da interpolação suave do navegador
+        imgClass: app.art === 'pixel' ? 'pixelart' : '',
+      };
+    });
+
+    var freewareApps = APPS_FREEWARE.map(function(app) {
+      var s = styleFor(app);
+      return {
+        ...app,
+        categoryLabel: s.categoryLabel,
+        className: 'app-card app-card--craft',
+        cardStyle: craftCard,
+        iconStyle: 'width:46px; height:46px; border-radius:12px; background:#c9944728; border:1px solid #c99447; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:16px; color:#e4b164;',
+        tagStyle: 'display:inline-block; margin-top:14px; font-size:10.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#231e16; background:#e4b164; border:1px solid #c99447; padding:4px 10px; border-radius:999px;',
+      };
+    });
+
+    return {
+      canvasRef: this.canvasRef,
+      cards: allApps.concat(freewareApps),
+      footerLinks: FOOTER_LINKS,
+      year: new Date().getFullYear(),
+    };
+  }
+}
+</script>
+
+<script>
+  // Motor de Busca e Filtro que roda sobre o DOM gerado pelo Playbase
+  document.addEventListener('DOMContentLoaded', () => {
+      // Pequeno atraso para garantir que o framework <x-dc> já desenhou os cards na tela
+      setTimeout(() => {
+          const searchInput = document.getElementById('hub-search');
+          const filterBtns = document.querySelectorAll('.hub-filter-btn');
+
+          function filterApps(query, category) {
+              const cards = document.querySelectorAll('.app-card');
+              query = query.toLowerCase();
+
+              cards.forEach(card => {
+                  const text = card.innerText.toLowerCase();
+
+                  let matchesSearch = text.includes(query);
+                  let matchesCategory = !category || card.getAttribute('data-category') === category;
+
+                  // Mostra se bater com a busca E com a categoria
+                  if (matchesSearch && matchesCategory) {
+                      card.style.display = '';
+                      card.style.opacity = '1';
+                  } else {
+                      card.style.display = 'none';
+                      card.style.opacity = '0';
+                  }
+              });
+          }
+
+          let currentCategory = '';
+
+          if(searchInput) {
+              searchInput.addEventListener('input', (e) => {
+                  filterApps(e.target.value, currentCategory);
+              });
+          }
+
+          filterBtns.forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                  // Reseta visual de todos os botões
+                  filterBtns.forEach(b => b.classList.remove('active'));
+                  // Ativa o clicado
+                  e.target.classList.add('active');
+
+                  currentCategory = e.target.getAttribute('data-filter');
+                  filterApps(searchInput ? searchInput.value : '', currentCategory);
+              });
+          });
+      }, 300); // 300 milissegundos
+  });
+</script>
+<script src="https://steniosantos.com/analytics.js"></script>
+</body>
+</html>

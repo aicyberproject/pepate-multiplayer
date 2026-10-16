@@ -1,0 +1,13 @@
+{
+  "name": "ppt-multiplayer",
+  "version": "1.0.0",
+  "description": "Pedra, Papel, Tesoura - Jogo multiplayer online em tempo real",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ioredis": "^6.0.0",
+    "ws": "^8.18.0"
+  }
+}

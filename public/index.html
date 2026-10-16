@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pedra, Papel e Tesoura — Multiplayer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <radialGradient id="grad-rock" cx="35%" cy="28%" r="85%">
+        <stop offset="0%" stop-color="#c8d2dc"/>
+        <stop offset="45%" stop-color="#7c8fa0"/>
+        <stop offset="100%" stop-color="#2e3b49"/>
+      </radialGradient>
+      <linearGradient id="grad-rock-shine" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="grad-paper" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#cdd6e4"/>
+      </linearGradient>
+      <linearGradient id="grad-sciss" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f8fafc"/>
+        <stop offset="100%" stop-color="#94a3b8"/>
+      </linearGradient>
+      <radialGradient id="gr" cx="35%" cy="28%" r="85%">
+        <stop offset="0%" stop-color="#c8d2dc"/>
+        <stop offset="45%" stop-color="#7c8fa0"/>
+        <stop offset="100%" stop-color="#2e3b49"/>
+      </radialGradient>
+      <linearGradient id="grs" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </linearGradient>
+      <linearGradient id="gp" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#cdd6e4"/>
+      </linearGradient>
+      <linearGradient id="gs" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f8fafc"/>
+        <stop offset="100%" stop-color="#94a3b8"/>
+      </linearGradient>
+      <linearGradient id="timer-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#7c6bff"/>
+        <stop offset="100%" stop-color="#22d3ee"/>
+      </linearGradient>
+      <linearGradient id="timer-grad-danger" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f87171"/>
+        <stop offset="100%" stop-color="#fbbf24"/>
+      </linearGradient>
+    </defs>
+  </svg>
+  <canvas id="bg-canvas"></canvas>
+  <div id="shockwave"></div>
+
+  <main id="app">
+    <!-- Tela de entrada -->
+    <section id="screen-lobby" class="screen">
+      <div class="glass panel center-panel">
+        <div class="logo">
+          <div class="logo-icons">
+            <span class="mini-icon rock-mini">
+              <svg viewBox="0 0 64 64"><path d="M17 42 C13 33 15 24 21 19.5 C26 16 35 14.5 40 17 C46 19.5 51.5 26 51 33.5 C50.5 42 46 51.5 39 54.5 C31.5 57.5 21.5 51 17 42 Z" fill="url(#gr)"/><ellipse cx="27" cy="22" rx="6.5" ry="4" fill="url(#grs)"/></svg>
+            </span>
+            <span class="mini-icon paper-mini">
+              <svg viewBox="0 0 64 64"><path d="M18 8 L40 8 L46 14 L46 56 L18 56 Z" fill="url(#gp)"/><path d="M40 8 L40 14 L46 14" fill="#b6c2d2"/></svg>
+            </span>
+            <span class="mini-icon sciss-mini">
+              <svg viewBox="0 0 64 64"><circle cx="20" cy="46" r="7" fill="url(#gs)"/><circle cx="44" cy="46" r="7" fill="url(#gs)"/><path d="M25 44 C31 38 36 30 41 22" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M39 44 C33 38 28 30 23 22" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
+            </span>
+          </div>
+          <h1 class="title">Pedra · Papel · Tesoura</h1>
+          <p class="subtitle">Multiplayer online em tempo real</p>
+        </div>
+
+        <form id="entry-form" class="entry-form">
+          <label class="field">
+            <span>Seu nome</span>
+            <input id="name-input" type="text" maxlength="16" placeholder="Ex.: Fenix" autocomplete="off" />
+          </label>
+          <div class="entry-actions">
+            <button id="btn-create" type="submit" class="btn btn-primary btn-big">
+              Criar sala
+            </button>
+          </div>
+        </form>
+
+        <div class="divider"><span>ou</span></div>
+
+        <form id="join-form" class="entry-form">
+          <label class="field">
+            <span>Codigo da sala</span>
+            <input id="code-input" type="text" maxlength="6" placeholder="EX: A1B2C3" autocomplete="off" />
+          </label>
+          <button id="btn-join" type="submit" class="btn btn-ghost btn-big">Entrar na sala</button>
+        </form>
+
+        <div class="entry-actions">
+          <button id="btn-info" type="button" class="btn btn-ghost btn-big">Regras, ética e vitórias</button>
+        </div>
+
+        <p id="entry-error" class="error-msg"></p>
+      </div>
+    </section>
+
+    <!-- Tela do jogo -->
+    <section id="screen-game" class="screen hidden">
+      <header class="topbar">
+        <div class="brand">
+          <h1 class="title title-sm">Pedra · Papel · Tesoura</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="room-chip" title="Codigo da sala">
+            <span class="chip-label">Sala</span>
+            <span id="room-code" class="chip-code"></span>
+            <button id="btn-copy" class="icon-btn" title="Copiar link da sala">
+              <svg viewBox="0 0 24 24" width="16" height="16"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="topbar-actions">
+            <button id="btn-pause" class="btn btn-small hidden">Pausar</button>
+            <button id="btn-end" class="btn btn-small btn-danger hidden">Encerrar partida</button>
+            <button id="btn-leave" class="btn btn-small btn-ghost-sm" title="Sair da sala">Sair</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="layout">
+        <!-- Coluna da esquerda: placar + historico -->
+        <aside class="col-left">
+          <div class="glass panel">
+            <h2 class="panel-title">Placar</h2>
+            <ol id="scoreboard" class="scoreboard"></ol>
+          </div>
+          <div class="glass panel">
+            <h2 class="panel-title">Historico</h2>
+            <ul id="history" class="history"></ul>
+          </div>
+        </aside>
+
+        <!-- Centro: arena -->
+        <div class="col-center">
+          <div class="arena">
+            <div id="turn-banner" class="turn-banner hidden">
+              <span class="crown" title="Jogador da vez (referencia)"></span>
+              <span id="turn-label" class="turn-label">A vez de</span>
+              <span id="turn-name" class="turn-name"></span>
+            </div>
+
+            <div id="phase-lobby" class="phase hidden">
+              <p id="lobby-msg" class="lobby-msg">Aguardando jogadores...</p>
+              <div id="mode-row" class="mode-row">
+                <label for="mode-select">Modo de partida</label>
+                <select id="mode-select">
+                  <option value="infinito">Infinito</option>
+                  <option value="3">Melhor de 3 (2 vitórias)</option>
+                  <option value="5">Melhor de 5 (3 vitórias)</option>
+                  <option value="7">Melhor de 7 (4 vitórias)</option>
+                  <option value="9">Melhor de 9 (5 vitórias)</option>
+                </select>
+              </div>
+              <p id="mode-display" class="mode-display hidden"></p>
+              <button id="btn-start" class="btn btn-primary btn-big hidden">Iniciar jogo</button>
+            </div>
+
+            <div id="phase-choose" class="phase hidden">
+              <div class="timer-wrap">
+                <svg class="timer-ring" viewBox="0 0 120 120">
+                  <circle class="ring-bg" cx="60" cy="60" r="54" />
+                  <circle id="ring-fg" class="ring-fg" cx="60" cy="60" r="54" />
+                </svg>
+                <div class="timer-text"><span id="timer-num">15</span><small>s</small></div>
+              </div>
+              <p id="choose-hint" class="choose-hint">Escolha sua carta!</p>
+              <div id="cards" class="cards">
+                <button class="card card-rock" data-choice="pedra">
+                  <span class="card-shine"></span>
+                  <span class="card-icon">
+                    <svg viewBox="0 0 64 64" width="92" height="92">
+                      <path d="M17 42 C13 33 15 24 21 19.5 C26 16 35 14.5 40 17 C46 19.5 51.5 26 51 33.5 C50.5 42 46 51.5 39 54.5 C31.5 57.5 21.5 51 17 42 Z" fill="url(#grad-rock)" stroke="#0f172a" stroke-width="1.5"/>
+                      <path d="M26 22 C28 26 27 31 30 34 M37 25 C38 30 40 32 41 36" stroke="#0f172a" stroke-width="1.6" fill="none" stroke-linecap="round" opacity="0.35"/>
+                      <ellipse cx="27" cy="22" rx="6.5" ry="4" fill="url(#grad-rock-shine)"/>
+                    </svg>
+                  </span>
+                  <span class="card-name">Pedra</span>
+                </button>
+                <button class="card card-paper" data-choice="papel">
+                  <span class="card-shine"></span>
+                  <span class="card-icon">
+                    <svg viewBox="0 0 64 64" width="92" height="92">
+                      <path d="M18 8 L40 8 L46 14 L46 56 L18 56 Z" fill="url(#grad-paper)" stroke="#0f172a" stroke-width="1.5"/>
+                      <path d="M40 8 L40 14 L46 14" fill="#b6c2d2" stroke="#0f172a" stroke-width="1.2"/>
+                      <g stroke="#0f172a" stroke-width="2" stroke-linecap="round" opacity="0.3">
+                        <line x1="23" y1="24" x2="41" y2="24"/>
+                        <line x1="23" y1="31" x2="41" y2="31"/>
+                        <line x1="23" y1="38" x2="35" y2="38"/>
+                      </g>
+                    </svg>
+                  </span>
+                  <span class="card-name">Papel</span>
+                </button>
+                <button class="card card-scissors" data-choice="tesoura">
+                  <span class="card-shine"></span>
+                  <span class="card-icon">
+                    <svg viewBox="0 0 64 64" width="92" height="92">
+                      <circle cx="20" cy="46" r="7" fill="url(#grad-sciss)" stroke="#0f172a" stroke-width="1.5"/>
+                      <circle cx="44" cy="46" r="7" fill="url(#grad-sciss)" stroke="#0f172a" stroke-width="1.5"/>
+                      <circle cx="20" cy="46" r="2.4" fill="#0f172a"/>
+                      <circle cx="44" cy="46" r="2.4" fill="#0f172a"/>
+                      <path d="M25 44 C31 38 36 30 41 22" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round"/>
+                      <path d="M39 44 C33 38 28 30 23 22" stroke="#cbd5e1" stroke-width="4" fill="none" stroke-linecap="round"/>
+                      <circle cx="41" cy="21" r="2.5" fill="#94a3b8" stroke="#0f172a" stroke-width="1"/>
+                      <circle cx="23" cy="21" r="2.5" fill="#94a3b8" stroke="#0f172a" stroke-width="1"/>
+                    </svg>
+                  </span>
+                  <span class="card-name">Tesoura</span>
+                </button>
+              </div>
+              <p id="locked-msg" class="locked-msg hidden">Lance registrado! Aguardando os demais...</p>
+              <div id="pause-overlay" class="pause-overlay hidden">
+                <span>Jogo pausado pelo anfitriao</span>
+              </div>
+            </div>
+
+            <div id="phase-reveal" class="phase hidden">
+              <div id="match-winner-banner" class="match-winner hidden"></div>
+              <h2 class="reveal-title">Resultado da rodada</h2>
+              <div id="reveal-grid" class="reveal-grid"></div>
+              <div class="reveal-actions">
+                <button id="btn-next" class="btn btn-primary">Proxima rodada</button>
+                <span id="auto-next" class="auto-next">Proxima em <b id="auto-next-num">8</b>s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna da direita: chat -->
+        <aside class="col-right">
+          <div class="glass panel chat-panel">
+            <h2 class="panel-title">Chat</h2>
+            <ul id="chat" class="chat"></ul>
+            <form id="chat-form" class="chat-form">
+              <input id="chat-input" type="text" maxlength="200" placeholder="Mensagem..." autocomplete="off" />
+              <button type="submit" class="icon-btn send-btn">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path d="M3 11l18-8-8 18-2.5-7.5z" fill="currentColor"/></svg>
+              </button>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div id="confetti-layer"></div>
+
+  <!-- Janela interna: regras, ética e vitórias -->
+  <div id="info-modal" class="modal-backdrop hidden">
+    <div class="modal glass">
+      <div class="modal-head">
+        <h2>Regras, ética e vitórias</h2>
+        <button id="modal-close" class="icon-btn" title="Fechar">x</button>
+      </div>
+      <div class="modal-body">
+        <section class="modal-section">
+          <h3>Placar de vitorias (historico)</h3>
+          <ol id="leaderboard" class="leaderboard"><li class="dim">Carregando...</li></ol>
+          <h4>Ultimas vitorias</h4>
+          <ul id="recent-wins" class="recent-wins"><li class="dim">Carregando...</li></ul>
+        </section>
+
+        <section class="modal-section">
+          <h3>Regras do jogo</h3>
+          <ul>
+            <li>Pedra vence tesoura; tesoura vence papel; papel vence pedra.</li>
+            <li>O jogador da vez e a referencia: a escolha dele enfrenta a de cada um dos demais.</li>
+            <li>Vitoria vale 1 ponto; empate nao pontua.</li>
+            <li>Modos: melhor de 3 (2 vitorias), melhor de 5 (3), melhor de 7 (4), melhor de 9 (5) ou infinito.</li>
+            <li>Cada rodada tem 15s; quem nao escolher recebe lance automatico.</li>
+            <li>O anfitriao pode pausar e encerrar a partida.</li>
+          </ul>
+        </section>
+
+        <section class="modal-section">
+          <h3>Etica no chat</h3>
+          <ul>
+            <li>Use o chat com respeito: sem ofensas, discriminacao ou assedio.</li>
+            <li>Proibido spam, flood, links maliciosos e divulgacao de dados pessoais.</li>
+            <li>Proibido conteudo ilegal ou discurso de odio.</li>
+            <li>Violacoes podem resultar em banimento da sala ou do servidor.</li>
+          </ul>
+        </section>
+
+        <section class="modal-section">
+          <h3>Banimentos</h3>
+          <ul>
+            <li>O criador da sala pode banir jogadores (eles nao podem reentrar na sala).</li>
+            <li>O dono do servidor pode banir jogadores globalmente (de todas as salas).</li>
+            <li>Quem e banido globalmente nao pode criar nem entrar em salas.</li>
+          </ul>
+        </section>
+
+        <section class="modal-section">
+          <h3>Administracao do servidor</h3>
+          <p class="dim">Reservado ao dono do servidor. A chave e exibida nos logs do servidor.</p>
+          <div class="admin-form">
+            <input id="admin-key" type="password" placeholder="Chave de administrador" autocomplete="off" />
+            <input id="admin-name" type="text" placeholder="Nome do jogador" autocomplete="off" />
+            <input id="admin-reason" type="text" placeholder="Motivo (opcional)" autocomplete="off" />
+            <div class="admin-actions">
+              <button id="btn-admin-ban" class="btn btn-small btn-danger">Banir globalmente</button>
+              <button id="btn-admin-unban" class="btn btn-small btn-ghost-sm">Remover ban</button>
+            </div>
+            <p id="admin-result" class="admin-result"></p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
